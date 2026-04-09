@@ -93,5 +93,5 @@ volumes:
   mongo-data:
     driver: local
 networks:
-  food-network:
+  fastfood-networks:
     driver: bridge
