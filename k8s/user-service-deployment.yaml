@@ -28,7 +28,7 @@ spec:
     spec:
       containers:
         - name: user-service
-          image: vignesh8386/fastfoodapp-user-service:latest
+          image: vignesh8386/fastfoodapp-user-services:latest
           ports:
             - containerPort: 5001
           envFrom:

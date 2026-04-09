@@ -29,7 +29,7 @@ spec:
     spec:
       containers:
         - name: order-service
-          image: vignesh8386/fastfoodapp-order-service:latest
+          image: vignesh8386/fastfoodapp-order-services:latest
           ports:
             - containerPort: 5003
           envFrom:
