@@ -54,6 +54,7 @@ services:
     environment:
       - PORT=5003
       - MONGO_URI=mongodb://mongodb:27017/food_delivery_orders
+      - RESTAURANT_SERVICE_URL=http://restaurant-services:5002
       - JWT_SECRET=jwt_secret_key_2024
       - JWT_EXPIRE=7d
 
