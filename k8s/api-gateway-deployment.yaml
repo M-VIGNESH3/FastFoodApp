@@ -1,0 +1,58 @@
+# API Gateway Deployment
+# Image: your-dockerhub-username/api-gateway:latest
+# Port: 5000
+# Replicas: 2
+# Env from: configmap, secret
+# USER_SERVICE_URL: http://user-service:5001
+# RESTAURANT_SERVICE_URL: http://restaurant-service:5002
+# ORDER_SERVICE_URL: http://order-service:5003
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway-Deployment
+  namespace: fastfood
+spec:
+  replicas: 2
+  selector:
+    matchlabels:
+      app: api-gateway
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        app: api-gateway
+    spec:
+      containers:
+        - name: api-gateway
+          image: vignesh8386/fastfoodapp-api-gateway:latest
+          ports:
+            - containerPort: 5000
+
+          # env:
+          #   - name: USER_SERVICE_URL
+          #     value: http://user-service:5001
+          #   - name: RESTAURANT_SERVICE_URL
+          #     value: http://restaurant-service:5002
+          #   - name: ORDER_SERVICE_URL
+          #     value: http://order-service:5003
+          #   - name: MONGO_URI
+          #     value: mongodb://mongodb:27017/fastfoodapp
+
+          envFrom:
+            - configMapRef:
+                name: fastfoodapp-config
+            - secretRef:
+                name: fastfoodapp-secret
+
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "256Mi"
+            limits:
+              memory: "128Mi"
+              cpu: "512Mi"  

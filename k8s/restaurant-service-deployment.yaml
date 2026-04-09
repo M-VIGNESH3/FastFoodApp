@@ -1,0 +1,47 @@
+# Restaurant Service Deployment
+# Image: your-dockerhub-username/restaurant-service:latest
+# Port: 5002
+# Replicas: 2
+# Env from: configmap, secret
+# MONGO_URI: mongodb://mongodb:27017/food_delivery_restaurants
+
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: restaurant-service-Deployment
+  namespace: fastfood
+spec:
+  replicas: 2
+  selector:
+    matchlabels:
+      app: restaurant-service
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        app: restaurant-service
+    spec:
+      containers:
+        - name: restaurant-service
+          image: vignesh8386/fastfoodapp-restaurant-service:latest
+          ports:
+            - containerPort: 5002
+          envFrom:
+            - configMapRef:
+                name: fastfoodapp-config
+            - secretRef:
+                name: fastfoodapp-secret
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "256Mi"
+            limits:
+              memory: "128Mi"
+              cpu: "512Mi"
+              
+        

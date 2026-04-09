@@ -1,0 +1,8 @@
+# Namespace for the FastFood application
+# Kind: Namespace
+# Name: fastfood
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: fastfood

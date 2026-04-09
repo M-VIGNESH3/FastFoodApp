@@ -1,0 +1,45 @@
+# MongoDB Deployment
+# Image: mongo:7
+# Port: 27017
+# Mount the PVC at /data/db
+# Replicas: 1
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongodb-Deployment
+  namespace: fastfood
+spec:
+  replicas: 1
+  selector:
+    matchlabels:
+      app: mongodb
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        app: mongodb
+    spec:
+      containers:
+        - name: mongodb
+          image: mongo:7
+          ports:
+            - containerPort: 27017
+          volumeMounts:
+            - mountPath: /data/db
+              name: mongodb-Storage
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "512Mi"
+            limits:
+              memory: "512Mi"
+              cpu: "1Gi"
+      volumes:
+        - name: mongodb-Storage
+          persistentVolumeClaim:
+            claimName: mongodb-pvc  

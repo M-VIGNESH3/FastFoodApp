@@ -1,0 +1,50 @@
+# Frontend Deployment
+# Image: your-dockerhub-username/frontend:latest
+# Port: 80
+# Replicas: 2
+apiVersion: apps/v1
+kind: Deployment
+metadata: 
+  name: frontend-Deployment
+  namespace: fastfood
+spec:
+  replicas: 2
+  selector:
+    matchlabels:
+      app: frontend  
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: vignesh8386/fastfoodapp-frontend:latest
+          ports:
+            - containerPort: 80
+          # env:
+          #   - name: VITE_API_URL
+          #     value: http://api-gateway:5000 
+
+          env:
+            - name: VITE_API_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: fastfoodapp-config
+                  key: API_URL
+
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "256Mi"
+            limits:
+              memory: "128Mi"
+              cpu: "512Mi"   
+            
+          

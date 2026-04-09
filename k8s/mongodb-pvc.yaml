@@ -1,0 +1,16 @@
+# PersistentVolumeClaim for MongoDB data
+# Kind: PersistentVolumeClaim
+# Storage: 1Gi
+# AccessMode: ReadWriteOnce
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mongodb-pvc
+  namespace: fastfood
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
