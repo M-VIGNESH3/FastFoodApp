@@ -1,0 +1,59 @@
+name: Code Quality Check
+
+# ============================================================
+# 1. THE TRIGGER (on:)
+# When should this code quality check happen?
+# Usually, we want to check code whenever it gets pushed to 'main'
+# or when someone brings new code in via a 'pull_request'.
+# ============================================================
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+# ============================================================
+# 2. THE JOBS (jobs:)
+# What specifically are we doing?
+# ============================================================
+jobs:
+  # We define a job and name it 'lint-code'. 
+  # "Linting" is a developer term that means scanning code for 
+  # bugs, stylistic mistakes, or suspicious constructs.
+  lint-code:
+    name: Run JavaScript Code Linter
+    
+    # We ask GitHub to give us a fresh Ubuntu Linux computer (Runner)
+    runs-on: ubuntu-latest
+
+    # ============================================================
+    # 3. THE STEPS (steps:)
+    # The step-by-step instructions for the Ubuntu computer.
+    # ============================================================
+    steps:
+      # Step A: Copy your project files onto the Ubuntu computer
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Step B: Install Node.js so the computer understands JavaScript commands
+      - name: Setup Node.js Environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+
+      # Step C: Run the Code Quality Checker tool!
+      # We are using a community tool called "standard" (StandardJS). 
+      # It automatically scans your JavaScript files for poorly written code, 
+      # unused variables, and formatting errors—with ZERO configuration needed.
+      - name: Check Code Quality using StandardJS
+        run: |
+          echo "Starting the Code Quality scanner..."
+          
+          # 'npx' downloads the 'standard' tool temporarily and runs it on your code.
+          # We add "|| true" at the end for now. This tells the pipeline:
+          # "Even if you find bad code, just warn us, but don't crash the whole pipeline." 
+          # In a real company, you would remove "|| true" so the pipeline strictly fails!
+          
+          npx standard || true
+          
+          echo "Finished scanning!"
