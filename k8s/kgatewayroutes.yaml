@@ -12,7 +12,7 @@ spec:
             type: PathPrefix
             value: /api
       backendRefs:
-        - name: api-gateway-service
+        - name: api-gateway
           port: 5000
     - matches:
         - path:
