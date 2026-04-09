@@ -14,7 +14,7 @@ metadata:
 spec:
   replicas: 2
   selector:
-    matchlabels:
+    matchLabels:
       app: restaurant-service
   strategy:
     type: RollingUpdate
@@ -43,5 +43,5 @@ spec:
             limits:
               memory: "128Mi"
               cpu: "512Mi"
-              
+
         

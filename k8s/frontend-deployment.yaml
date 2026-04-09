@@ -10,7 +10,7 @@ metadata:
 spec:
   replicas: 2
   selector:
-    matchlabels:
+    matchLabels:
       app: frontend  
   strategy:
     type: RollingUpdate

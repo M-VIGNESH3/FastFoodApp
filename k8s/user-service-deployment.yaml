@@ -14,7 +14,7 @@ metadata:
 spec:
   replicas: 2
   selector:
-    matchlabels:
+    matchLabels:
       app: user-service
   strategy:
     type: RollingUpdate
@@ -43,4 +43,3 @@ spec:
             limits:
               memory: "128Mi"
               cpu: "512Mi"
-              

@@ -15,7 +15,7 @@ metadata:
 spec:
   replicas: 2
   selector:
-    matchlabels:
+    matchLabels:
       app: api-gateway
   strategy:
     type: RollingUpdate
