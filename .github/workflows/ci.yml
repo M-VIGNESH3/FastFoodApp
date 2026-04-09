@@ -1,0 +1,62 @@
+name: Basic Node.js CI
+
+# -----------------------------------------------------
+# 1. THE TRIGGER (on:)
+# This section defines WHEN the pipeline should run.
+# Here, it runs whenever code is pushed to the main branch
+# or when a pull request is made to the main branch.
+# -----------------------------------------------------
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+# -----------------------------------------------------
+# 2. THE JOBS (jobs:)
+# This section defines WHAT should be done.
+# A workflow consists of one or more jobs.
+# -----------------------------------------------------
+jobs:
+  build-and-test:
+    # Specifies the virtual machine (runner) the job will run on.
+    # In this case, an Ubuntu Linux machine provided by GitHub.
+    runs-on: ubuntu-latest
+
+    # -----------------------------------------------------
+    # 3. THE STEPS (steps:)
+    # The sequential tasks to execute inside this job.
+    # -----------------------------------------------------
+    steps:
+    # Step A: Get the code
+    # This uses a pre-built Action by GitHub to clone your repository
+    # onto the runner machine so we can work with it.
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    # Step B: Set up Node.js
+    # Another pre-built Action that installs Node.js on the runner machine.
+    - name: Setup Node.js Environment
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+
+    # Step C: Run a simple terminal command
+    # 'run' allows you to execute shell commands, just like on your PC terminal.
+    - name: Print a welcome message
+      run: echo "Hello, world! Welcome to my first CI pipeline! 🚀"
+
+    # Step D: Install dependencies for the user-service
+    # We navigate to the user-service folder and run npm install.
+    - name: Install dependencies (User Service)
+      run: |
+        cd user-service
+        npm install
+        echo "Dependencies installed successfully!"
+
+    # Step E: (Optional Future Step) Run Tests
+    # Usually, the next step would be `npm test` if you had tests written.
+    # - name: Run tests
+    #   run: |
+    #     cd user-service
+    #     npm test
