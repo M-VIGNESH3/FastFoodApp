@@ -4,9 +4,8 @@ kind: Ingress
 metadata:
   name: fastfoodapp-haproxy-ingress
   namespace: {{ .Values.global.namespace | default "fastfood" }}
-  annotations:
-    kubernetes.io/ingress.class: {{ .Values.ingress.className | quote }}
 spec:
+  ingressClassName: {{ .Values.ingress.className | quote }}
   rules:
     - http:
         paths:
