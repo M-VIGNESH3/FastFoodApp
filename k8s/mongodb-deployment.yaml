@@ -34,11 +34,11 @@ spec:
               name: mongodb-Storage
           resources:
             requests:
-              memory: "256Mi"
-              cpu: "512Mi"
+              memory: "64Mi"
+              cpu: "250m"
             limits:
-              memory: "512Mi"
-              cpu: "1Gi"
+              memory: "128Mi"
+              cpu: "500m"
       volumes:
         - name: mongodb-Storage
           persistentVolumeClaim:

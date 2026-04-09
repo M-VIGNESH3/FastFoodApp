@@ -12,8 +12,8 @@ metadata:
   name: fastfoodapp-config
   namespace: fastfood
 data:
-  USER_SERVICE_URL: http://user-service:5001
-  RESTAURANT_SERVICE_URL: http://restaurant-service:5002
-  ORDER_SERVICE_URL: http://order-service:5003
-  MONGO_URI: mongodb://mongodb:27017/fastfoodapp
-
+  API_URL: http://api-gateway-service:5000
+  USER_SERVICE_URL: http://user-service-service:5001
+  RESTAURANT_SERVICE_URL: http://restaurant-service-service:5002
+  ORDER_SERVICE_URL: http://order-service-service:5003
+  MONGO_URI: mongodb://mongodb-service:27017/fastfoodapp
