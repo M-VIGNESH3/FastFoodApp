@@ -9,7 +9,7 @@ metadata:
   name: frontend-service
   namespace: fastfood
 spec:
-  type: ClusterIP
+  type: LoadBalancer
   ports:
     - port: 80
       targetPort: 80
