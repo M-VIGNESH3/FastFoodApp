@@ -1,0 +1,73 @@
+# FastFood Application Modular Helm Architecture
+
+I have successfully "Helmified" your Kubernetes infrastructure into a modular, production-ready Umbrella chart. Here is exactly what was transformed and how you can manage it going forward.
+
+## 📁 The Umbrella Architecture
+
+Instead of ~20 flat, hardcoded YAML files, your repository now contains a clean `release/` directory mapping each microservice into its own localized workspace (`charts/`).
+
+```
+release/
+├── Chart.yaml              # Master Umbrella Chart
+├── values.yaml             # 🎛️ Singleton Global Configuration
+├── templates/              # Global Resources
+│   ├── configmap.yaml
+│   ├── haproxy-ingress.yaml
+│   ├── namespace.yaml
+│   ├── nfs-storageclass.yaml
+│   └── secret.yaml
+└── charts/                 # Modular Sub-Charts
+    ├── api-gateway/
+    ├── frontend/
+    ├── mongodb/
+    ├── order-service/
+    ├── restaurant-service/
+    └── user-service/
+```
+
+### The `values.yaml` Nerve Center
+All configuration has been ripped out of the individual files and centralized into `release/values.yaml`.
+
+*   **Global Variables**: Things like `.Values.global.namespace` or the `mongodbUri` apply everywhere.
+*   **Sub-Chart Contexts**: Things like `.Values.replicaCount` for the `frontend` are safely quarantined inside the `frontend:` block in the `values.yaml`.
+
+```yaml
+global:
+  namespace: fastfood
+  
+ingress:
+  enabled: true
+  className: "haproxy"
+
+frontend:
+  replicaCount: 1      # Helm automatically maps this!
+  image:
+    repository: vignesh8386/fastfoodapp-frontend
+    tag: latest
+```
+
+## 🚀 How to Utilize Your Helm Chart
+
+The beauty of this modularization is that you no longer need to manage 20 separate files when deploying or configuring the application.
+
+> [!TIP]
+> You can now deploy, update, and completely tear down the infrastructure using single Helm commands, passing in specific value overrides when needed.
+
+**1. Deploying the Application**
+To deploy the entire structure natively using the `values.yaml`:
+```bash
+helm install fastfood release/ --namespace fastfood --create-namespace
+```
+
+**2. Upgrading / Changing Values**
+If you ever need to scale the User Service to 3 replicas, you no longer have to touch a `.yaml` deployment file. You just change `replicaCount` in `values.yaml` and run:
+```bash
+helm upgrade fastfood release/ --namespace fastfood
+```
+*(Or you can override it inline dynamically: `helm upgrade fastfood release/ --set user-service.replicaCount=3`)*
+
+**3. Tearing down the Infrastructure**
+To cleanly delete the entire suite:
+```bash
+helm uninstall fastfood --namespace fastfood
+```

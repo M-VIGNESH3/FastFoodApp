@@ -1,0 +1,91 @@
+# Global Variables shared across all services
+global:
+  namespace: fastfood
+  mongodbUri: "mongodb://mongodb-service:27017/fastfoodapp"
+  jwtSecretBase64: "and0X3NlY3JldF9rZXlfMjAyNA=="
+  jwtExpireBase64: "N2Q="
+
+ingress:
+  enabled: true
+  className: "haproxy"
+
+# ----------------- Sub-Charts configuration -----------------
+frontend:
+  replicaCount: 1
+  image:
+    repository: vignesh8386/fastfoodapp-frontend
+    tag: latest
+  resources:
+    requests:
+      memory: "64Mi"
+      cpu: "50m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+api-gateway:
+  replicaCount: 1
+  image:
+    repository: vignesh8386/fastfoodapp-api-gateway
+    tag: latest
+  resources:
+    requests:
+      memory: "64Mi"
+      cpu: "50m"
+    limits:
+      memory: "128Mi"
+      cpu: "500m"
+
+user-service:
+  replicaCount: 1
+  image:
+    repository: vignesh8386/fastfoodapp-user-services
+    tag: latest
+  resources:
+    requests:
+      memory: "64Mi"
+      cpu: "50m"
+    limits:
+      memory: "128Mi"
+      cpu: "500m"
+
+restaurant-service:
+  replicaCount: 1
+  image:
+    repository: vignesh8386/fastfoodapp-restaurant-services
+    tag: latest
+  resources:
+    requests:
+      memory: "64Mi"
+      cpu: "50m"
+    limits:
+      memory: "128Mi"
+      cpu: "500m"
+
+order-service:
+  replicaCount: 1
+  image:
+    repository: vignesh8386/fastfoodapp-order-services
+    tag: latest
+  resources:
+    requests:
+      memory: "64Mi"
+      cpu: "50m"
+    limits:
+      memory: "128Mi"
+      cpu: "500m"
+
+mongodb:
+  replicaCount: 1
+  image:
+    repository: mongo
+    tag: "5.0"
+  resources:
+    requests:
+      memory: "64Mi"
+      cpu: "50m"
+    limits:
+      memory: "256Mi"
+      cpu: "1000m"
+  storage:
+    size: 5Gi
