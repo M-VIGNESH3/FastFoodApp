@@ -31,7 +31,7 @@ spec:
             - containerPort: 27017
           volumeMounts:
             - mountPath: /data/db
-              name: mongodb-Storage
+              name: mongodb-storage
           resources:
             requests:
               memory: "64Mi"
@@ -40,6 +40,6 @@ spec:
               memory: "128Mi"
               cpu: "500m"
       volumes:
-        - name: mongodb-Storage
+        - name: mongodb-storage
           persistentVolumeClaim:
             claimName: mongodb-pvc  
