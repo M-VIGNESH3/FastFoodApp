@@ -9,6 +9,7 @@ metadata:
   name: mongodb-pvc
   namespace: fastfood
 spec:
+  storageClassName: csi-standard
   accessModes:
     - ReadWriteOnce
   resources:
