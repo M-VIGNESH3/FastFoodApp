@@ -5,7 +5,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata: 
-  name: frontend-Deployment
+  name: frontend-deployment
   namespace: fastfood
 spec:
   replicas: 2

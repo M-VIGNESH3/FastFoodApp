@@ -10,7 +10,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: api-gateway-Deployment
+  name: api-gateway-deployment
   namespace: fastfood
 spec:
   replicas: 2

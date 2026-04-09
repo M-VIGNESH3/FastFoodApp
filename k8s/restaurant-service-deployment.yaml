@@ -9,7 +9,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: restaurant-service-Deployment
+  name: restaurant-service-deployment
   namespace: fastfood
 spec:
   replicas: 2

@@ -4,7 +4,7 @@
 # Max replicas: 5
 # Target CPU utilization: 70%
 
-apiVersion : v1
+apiVersion : autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: api-gateway-hpa
