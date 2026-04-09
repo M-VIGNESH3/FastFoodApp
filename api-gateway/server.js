@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
 const dotenv = require('dotenv');
-const { createProxyMiddleware } = require('http-proxy-middleware');
+const axios = require('axios');
 const jwt = require('jsonwebtoken');
 
 // Load environment variables
@@ -43,6 +43,36 @@ const authMiddleware = (req, res, next) => {
   }
 };
 
+// Helper: forward request to a service
+const forwardRequest = async (req, res, serviceUrl) => {
+  try {
+    const url = `${serviceUrl}${req.originalUrl}`;
+    const config = {
+      method: req.method,
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(req.headers.authorization && { Authorization: req.headers.authorization }),
+      },
+      data: req.body,
+      timeout: 10000,
+    };
+
+    const response = await axios(config);
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    if (error.response) {
+      res.status(error.response.status).json(error.response.data);
+    } else {
+      console.error(`Proxy error to ${serviceUrl}:`, error.message);
+      res.status(502).json({
+        success: false,
+        message: 'Service unavailable',
+      });
+    }
+  }
+};
+
 // Gateway health check
 app.get('/health', (req, res) => {
   res.status(200).json({
@@ -57,119 +87,20 @@ app.get('/health', (req, res) => {
   });
 });
 
-// ========== USER SERVICE PROXY ==========
-app.use(
-  '/api/users',
-  createProxyMiddleware({
-    target: USER_SERVICE_URL,
-    changeOrigin: true,
-    pathRewrite: { '^/api/users': '/api/users' },
-    on: {
-      proxyReq: (proxyReq, req) => {
-        // Forward the body for POST/PUT requests
-        if (req.body && ['POST', 'PUT', 'PATCH'].includes(req.method)) {
-          const bodyData = JSON.stringify(req.body);
-          proxyReq.setHeader('Content-Type', 'application/json');
-          proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
-          proxyReq.write(bodyData);
-        }
-      },
-      error: (err, req, res) => {
-        console.error('User Service Proxy Error:', err.message);
-        res.status(502).json({
-          success: false,
-          message: 'User service is unavailable',
-        });
-      },
-    },
-  })
-);
+// ========== USER SERVICE ==========
+app.all('/api/users/*', (req, res) => forwardRequest(req, res, USER_SERVICE_URL));
+app.all('/api/users', (req, res) => forwardRequest(req, res, USER_SERVICE_URL));
 
-// ========== RESTAURANT SERVICE PROXY ==========
-app.use(
-  '/api/restaurants',
-  createProxyMiddleware({
-    target: RESTAURANT_SERVICE_URL,
-    changeOrigin: true,
-    pathRewrite: { '^/api/restaurants': '/api/restaurants' },
-    on: {
-      proxyReq: (proxyReq, req) => {
-        if (req.body && ['POST', 'PUT', 'PATCH'].includes(req.method)) {
-          const bodyData = JSON.stringify(req.body);
-          proxyReq.setHeader('Content-Type', 'application/json');
-          proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
-          proxyReq.write(bodyData);
-        }
-      },
-      error: (err, req, res) => {
-        console.error('Restaurant Service Proxy Error:', err.message);
-        res.status(502).json({
-          success: false,
-          message: 'Restaurant service is unavailable',
-        });
-      },
-    },
-  })
-);
+// ========== RESTAURANT SERVICE ==========
+app.all('/api/restaurants/*', (req, res) => forwardRequest(req, res, RESTAURANT_SERVICE_URL));
+app.all('/api/restaurants', (req, res) => forwardRequest(req, res, RESTAURANT_SERVICE_URL));
 
-// ========== SEED ROUTE PROXY ==========
-app.use(
-  '/api/seed',
-  createProxyMiddleware({
-    target: RESTAURANT_SERVICE_URL,
-    changeOrigin: true,
-    pathRewrite: { '^/api/seed': '/api/seed' },
-    on: {
-      proxyReq: (proxyReq, req) => {
-        if (req.body && ['POST', 'PUT', 'PATCH'].includes(req.method)) {
-          const bodyData = JSON.stringify(req.body);
-          proxyReq.setHeader('Content-Type', 'application/json');
-          proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
-          proxyReq.write(bodyData);
-        }
-      },
-      error: (err, req, res) => {
-        console.error('Seed Proxy Error:', err.message);
-        res.status(502).json({
-          success: false,
-          message: 'Restaurant service (seed) is unavailable',
-        });
-      },
-    },
-  })
-);
+// ========== SEED ROUTE ==========
+app.all('/api/seed', (req, res) => forwardRequest(req, res, RESTAURANT_SERVICE_URL));
 
-// ========== ORDER SERVICE PROXY ==========
-app.use(
-  '/api/orders',
-  authMiddleware,
-  createProxyMiddleware({
-    target: ORDER_SERVICE_URL,
-    changeOrigin: true,
-    pathRewrite: { '^/api/orders': '/api/orders' },
-    on: {
-      proxyReq: (proxyReq, req) => {
-        // Forward auth headers
-        if (req.headers.authorization) {
-          proxyReq.setHeader('Authorization', req.headers.authorization);
-        }
-        if (req.body && ['POST', 'PUT', 'PATCH'].includes(req.method)) {
-          const bodyData = JSON.stringify(req.body);
-          proxyReq.setHeader('Content-Type', 'application/json');
-          proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
-          proxyReq.write(bodyData);
-        }
-      },
-      error: (err, req, res) => {
-        console.error('Order Service Proxy Error:', err.message);
-        res.status(502).json({
-          success: false,
-          message: 'Order service is unavailable',
-        });
-      },
-    },
-  })
-);
+// ========== ORDER SERVICE (protected) ==========
+app.all('/api/orders/*', authMiddleware, (req, res) => forwardRequest(req, res, ORDER_SERVICE_URL));
+app.all('/api/orders', authMiddleware, (req, res) => forwardRequest(req, res, ORDER_SERVICE_URL));
 
 // 404 handler
 app.use('*', (req, res) => {
