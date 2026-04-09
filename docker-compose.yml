@@ -12,6 +12,7 @@ services:
   user-services:
     build: ./user-service
     container_name: user-services
+    restart: unless-stopped
     ports:
       - "5001:5001"
     networks:
@@ -27,6 +28,7 @@ services:
   restaurant-services:
     build: ./restaurant-service
     container_name: restaurant-services
+    restart: unless-stopped
     ports:
       - "5002:5002"
     networks:
@@ -42,6 +44,7 @@ services:
   order-services:
     build: ./order-service
     container_name: order-services
+    restart: unless-stopped
     ports:
       - "5003:5003"
     networks:
@@ -57,6 +60,7 @@ services:
   api-gateway:
     build: ./api-gateway
     container_name: api-gateway
+    restart: unless-stopped
     ports:
       - "5000:5000"
     networks:
@@ -76,6 +80,7 @@ services:
   frontend:
     build: ./frontend
     container_name: frontend
+    restart: unless-stopped
     ports:
       - "80:80"
     networks:
