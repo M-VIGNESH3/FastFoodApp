@@ -1,0 +1,35 @@
+# =============================================================
+# ArgoCD AppProject
+# Defines the scope and permissions for the FastFoodApp
+# This restricts which repos can be used and which clusters/
+# namespaces the app can deploy to.
+# =============================================================
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: fastfoodapp
+  namespace: argocd
+  # Finalizer ensures ArgoCD cleans up properly on deletion
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  description: "FastFood Microservices Application Project"
+
+  # Only allow this GitHub repository as a source
+  sourceRepos:
+    - "https://github.com/M-VIGNESH3/FastFoodApp.git"
+
+  # Only allow deployments to the 'fastfood' namespace on the local cluster
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: fastfood
+
+  # Allow ArgoCD to manage these Kubernetes resource types
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+
+  # Allow all namespaced resources
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"

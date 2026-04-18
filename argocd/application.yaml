@@ -1,0 +1,70 @@
+# =============================================================
+# ArgoCD Application
+# This is the core manifest that tells ArgoCD:
+#   - WHERE to find the Helm chart (GitHub repo + path)
+#   - WHAT branch/revision to track
+#   - WHERE to deploy it (cluster + namespace)
+#   - HOW to sync (auto-sync with self-heal)
+# =============================================================
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: fastfoodapp
+  namespace: argocd
+  labels:
+    app.kubernetes.io/part-of: fastfoodapp
+  # Finalizer ensures cascade deletion of deployed resources
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  # Reference the AppProject we created
+  project: fastfoodapp
+
+  # -----------------------------------------------------------
+  # SOURCE: Where does ArgoCD find the manifests?
+  # -----------------------------------------------------------
+  source:
+    repoURL: "https://github.com/M-VIGNESH3/FastFoodApp.git"
+    targetRevision: feature/argocd-bluegreen
+    path: release
+
+    # Since we're using Helm charts, tell ArgoCD to render them
+    helm:
+      valueFiles:
+        - values.yaml
+
+  # -----------------------------------------------------------
+  # DESTINATION: Where should ArgoCD deploy?
+  # -----------------------------------------------------------
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: fastfood
+
+  # -----------------------------------------------------------
+  # SYNC POLICY: How should ArgoCD keep things in sync?
+  # -----------------------------------------------------------
+  syncPolicy:
+    # Automated sync: ArgoCD will automatically apply changes
+    # whenever it detects a drift between Git and the cluster
+    automated:
+      # prune: Delete resources that are no longer in Git
+      prune: true
+      # selfHeal: If someone manually changes a resource in the
+      # cluster, ArgoCD will revert it to match Git
+      selfHeal: true
+      # allowEmpty: Allow syncing even if there are no resources
+      allowEmpty: false
+
+    # Sync options for fine-tuned control
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+
+    # Retry policy if a sync fails
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

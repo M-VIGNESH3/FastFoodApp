@@ -1,3 +1,8 @@
+# =============================================================
+# FastFoodApp Helm Values
+# Configured for ArgoCD + Argo Rollouts Blue-Green Deployment
+# =============================================================
+
 # Global Variables shared across all services
 global:
   namespace: fastfood
@@ -9,7 +14,17 @@ ingress:
   enabled: true
   className: "haproxy"
 
+# -----------------------------------------------------------
+# Blue-Green Deployment Configuration (Argo Rollouts)
+# autoPromotionEnabled: false = manual promotion required
+# scaleDownDelaySeconds: time to keep old version alive after promotion
+# -----------------------------------------------------------
+blueGreen:
+  autoPromotionEnabled: false
+  scaleDownDelaySeconds: 30
+
 # ----------------- Sub-Charts configuration -----------------
+
 frontend:
   replicaCount: 1
   image:

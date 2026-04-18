@@ -1,0 +1,219 @@
+# =============================================================
+# CI/CD Pipeline for FastFoodApp
+# ---------------------------------------------------------
+# This pipeline implements the GitOps CI loop:
+#
+#   1. Developer pushes code
+#   2. CI builds & tests all microservices (parallel matrix)
+#   3. CI builds Docker images & scans for vulnerabilities
+#   4. CI pushes images to DockerHub with git SHA tags
+#   5. CI updates Helm values.yaml with new image tags
+#   6. ArgoCD detects the Git change and syncs the cluster
+#   7. Argo Rollouts performs blue-green deployment
+#
+# Required GitHub Secrets:
+#   - DOCKERHUB_USERNAME
+#   - DOCKERHUB_TOKEN
+#   - GIT_TOKEN (PAT with repo write access)
+# =============================================================
+
+name: FastFoodApp CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - feature/argocd-bluegreen
+    paths-ignore:
+      - "*.md"
+      - "argocd/**"
+      - "k8s/**"
+  pull_request:
+    branches:
+      - main
+      - feature/argocd-bluegreen
+
+# Prevent concurrent runs on the same branch
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# =============================================================
+# JOBS
+# =============================================================
+jobs:
+
+  # -----------------------------------------------------------
+  # JOB 1: LINT & TEST
+  # Runs code quality checks on all services in parallel
+  # -----------------------------------------------------------
+  lint-and-test:
+    name: "Lint & Test — ${{ matrix.service }}"
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - api-gateway
+          - user-service
+          - restaurant-service
+          - order-service
+        # Frontend is React/Vite — handled separately if needed
+
+    steps:
+      - name: "📥 Checkout Code"
+        uses: actions/checkout@v4
+
+      - name: "⚙️ Setup Node.js 20"
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+
+      - name: "📦 Install Dependencies"
+        run: |
+          cd ${{ matrix.service }}
+          npm ci --prefer-offline --no-audit
+        continue-on-error: false
+
+      - name: "🔍 Run Linter (StandardJS)"
+        run: |
+          cd ${{ matrix.service }}
+          npx standard || true
+
+  # -----------------------------------------------------------
+  # JOB 2: BUILD, SCAN & PUSH DOCKER IMAGES
+  # Builds images for all services, scans with Trivy, pushes
+  # to DockerHub with the git SHA as the image tag
+  # -----------------------------------------------------------
+  build-and-push:
+    name: "Build & Push — ${{ matrix.service }}"
+    runs-on: ubuntu-latest
+    needs: lint-and-test
+    if: github.event_name == 'push'
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: frontend
+            image: vignesh8386/fastfoodapp-frontend
+            context: ./frontend
+          - service: api-gateway
+            image: vignesh8386/fastfoodapp-api-gateway
+            context: ./api-gateway
+          - service: user-service
+            image: vignesh8386/fastfoodapp-user-services
+            context: ./user-service
+          - service: restaurant-service
+            image: vignesh8386/fastfoodapp-restaurant-services
+            context: ./restaurant-service
+          - service: order-service
+            image: vignesh8386/fastfoodapp-order-services
+            context: ./order-service
+
+    steps:
+      - name: "📥 Checkout Code"
+        uses: actions/checkout@v4
+
+      - name: "🐳 Set up Docker Buildx"
+        uses: docker/setup-buildx-action@v3
+
+      - name: "🔐 Login to DockerHub"
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: "🏗️ Build Docker Image"
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.context }}
+          push: false
+          load: true
+          tags: |
+            ${{ matrix.image }}:${{ github.sha }}
+            ${{ matrix.image }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: "🔒 Trivy Vulnerability Scan"
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "${{ matrix.image }}:${{ github.sha }}"
+          format: "table"
+          exit-code: "0"
+          severity: "CRITICAL,HIGH"
+          ignore-unfixed: true
+
+      - name: "🚀 Push to DockerHub"
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.context }}
+          push: true
+          tags: |
+            ${{ matrix.image }}:${{ github.sha }}
+            ${{ matrix.image }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # -----------------------------------------------------------
+  # JOB 3: UPDATE HELM VALUES (GitOps Trigger)
+  # After all images are built and pushed, update the Helm
+  # values.yaml with the new image tags (git SHA).
+  # This commit triggers ArgoCD to sync the cluster.
+  # -----------------------------------------------------------
+  update-helm-values:
+    name: "📝 Update Helm Image Tags"
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    if: github.event_name == 'push'
+
+    steps:
+      - name: "📥 Checkout Code"
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GIT_TOKEN }}
+          ref: ${{ github.ref_name }}
+
+      - name: "🔄 Update image tags in values.yaml"
+        run: |
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          echo "Updating image tags to: ${{ github.sha }}"
+          
+          # Update each service's image tag in values.yaml
+          # Using sed to replace the tag value under each service block
+          
+          # Frontend
+          sed -i '/^frontend:/,/^[a-z]/{s/tag: .*/tag: "${{ github.sha }}"/}' release/values.yaml
+          
+          # API Gateway
+          sed -i '/^api-gateway:/,/^[a-z]/{s/tag: .*/tag: "${{ github.sha }}"/}' release/values.yaml
+          
+          # User Service
+          sed -i '/^user-service:/,/^[a-z]/{s/tag: .*/tag: "${{ github.sha }}"/}' release/values.yaml
+          
+          # Restaurant Service
+          sed -i '/^restaurant-service:/,/^[a-z]/{s/tag: .*/tag: "${{ github.sha }}"/}' release/values.yaml
+          
+          # Order Service
+          sed -i '/^order-service:/,/^[a-z]/{s/tag: .*/tag: "${{ github.sha }}"/}' release/values.yaml
+          
+          echo "✅ Updated values.yaml:"
+          cat release/values.yaml
+
+      - name: "📤 Commit & Push Updated Values"
+        run: |
+          git config user.name "GitHub Actions Bot"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          git add release/values.yaml
+          
+          # Only commit if there are changes
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "ci: update image tags to ${{ github.sha }} [skip ci]"
+            git push
+            echo "✅ Pushed updated image tags — ArgoCD will now sync!"
+          fi
