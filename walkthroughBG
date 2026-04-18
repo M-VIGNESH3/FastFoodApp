@@ -1,0 +1,78 @@
+# Walkthrough: ArgoCD + Blue-Green Deployment
+
+## Summary
+
+Implemented a complete GitOps CI/CD pipeline with ArgoCD and Argo Rollouts blue-green deployment strategy on a new branch `feature/argocd-bluegreen`. **18 files changed** — 766 additions, 48 deletions.
+
+---
+
+## Branch Difference
+
+| Branch | Purpose |
+|--------|---------|
+| `main` | Original codebase with standard `Deployment` resources |
+| `feature/argocd-bluegreen` | ArgoCD + Argo Rollouts blue-green + CI/CD pipeline |
+
+Compare with: `git diff main..feature/argocd-bluegreen`
+
+---
+
+## What Changed
+
+### 1. ArgoCD Manifests (`argocd/`)
+
+| File | Purpose |
+|------|---------|
+| [namespace.yaml](file:///c:/Users/91901/OneDrive/Desktop/practice2/argocd/namespace.yaml) | Creates the `fastfood` namespace |
+| [project.yaml](file:///c:/Users/91901/OneDrive/Desktop/practice2/argocd/project.yaml) | AppProject — restricts repos and namespaces |
+| [application.yaml](file:///c:/Users/91901/OneDrive/Desktop/practice2/argocd/application.yaml) | Application CRD — auto-sync with self-heal |
+| [rollouts-dashboard.yaml](file:///c:/Users/91901/OneDrive/Desktop/practice2/argocd/rollouts-dashboard.yaml) | Dashboard service for visual rollout mgmt |
+| [README.md](file:///c:/Users/91901/OneDrive/Desktop/practice2/argocd/README.md) | Full setup guide |
+
+### 2. Argo Rollouts (Blue-Green)
+
+Converted 5 services from `Deployment` → `Rollout` with blue-green strategy:
+
+| Service | Rollout | Preview Service | Active Service (existing) |
+|---------|---------|-----------------|--------------------------|
+| api-gateway | [rollout.yaml](file:///c:/Users/91901/OneDrive/Desktop/practice2/release/charts/api-gateway/templates/rollout.yaml) | [preview-service.yaml](file:///c:/Users/91901/OneDrive/Desktop/practice2/release/charts/api-gateway/templates/preview-service.yaml) | `api-gateway` |
+| user-service | [rollout.yaml](file:///c:/Users/91901/OneDrive/Desktop/practice2/release/charts/user-service/templates/rollout.yaml) | [preview-service.yaml](file:///c:/Users/91901/OneDrive/Desktop/practice2/release/charts/user-service/templates/preview-service.yaml) | `user-service-service` |
+| restaurant-service | [rollout.yaml](file:///c:/Users/91901/OneDrive/Desktop/practice2/release/charts/restaurant-service/templates/rollout.yaml) | [preview-service.yaml](file:///c:/Users/91901/OneDrive/Desktop/practice2/release/charts/restaurant-service/templates/preview-service.yaml) | `restaurant-service-service` |
+| order-service | [rollout.yaml](file:///c:/Users/91901/OneDrive/Desktop/practice2/release/charts/order-service/templates/rollout.yaml) | [preview-service.yaml](file:///c:/Users/91901/OneDrive/Desktop/practice2/release/charts/order-service/templates/preview-service.yaml) | `order-service-service` |
+| frontend | [rollout.yaml](file:///c:/Users/91901/OneDrive/Desktop/practice2/release/charts/frontend/templates/rollout.yaml) | [preview-service.yaml](file:///c:/Users/91901/OneDrive/Desktop/practice2/release/charts/frontend/templates/preview-service.yaml) | `frontend-service` |
+
+**Key settings**: `autoPromotionEnabled: false` (manual promotion), `scaleDownDelaySeconds: 30`
+
+### 3. CI/CD Pipeline
+
+[ci-cd.yml](file:///c:/Users/91901/OneDrive/Desktop/practice2/.github/workflows/ci-cd.yml) — 3-job pipeline:
+
+```
+Job 1: lint-and-test (4 services in parallel matrix)
+    ↓
+Job 2: build-and-push (5 services, Docker build + Trivy scan + DockerHub push)
+    ↓
+Job 3: update-helm-values (updates image tags → triggers ArgoCD sync)
+```
+
+### 4. Updated Helm Values
+
+[values.yaml](file:///c:/Users/91901/OneDrive/Desktop/practice2/release/values.yaml) — Added blue-green config section
+
+---
+
+## GitOps Flow
+
+```
+Code Push → GitHub Actions CI → Docker Build + Push → Update values.yaml → ArgoCD Sync → Argo Rollouts Blue-Green → Manual Promote
+```
+
+---
+
+## Next Steps
+
+1. **Push the branch**: `git push -u origin feature/argocd-bluegreen`
+2. **Configure GitHub Secrets**: `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`, `GIT_TOKEN`
+3. **Install ArgoCD + Argo Rollouts** in your cluster (see [README](file:///c:/Users/91901/OneDrive/Desktop/practice2/argocd/README.md))
+4. **Apply ArgoCD manifests**: `kubectl apply -f argocd/`
+5. **Monitor**: Use the ArgoCD UI (port 8080) and Rollouts Dashboard (port 3100)

@@ -1,0 +1,18 @@
+# =============================================================
+# Preview Service for Order Service (Blue-Green)
+# =============================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-service-preview
+  namespace: {{ .Values.global.namespace | default "fastfood" }}
+  labels:
+    app: order-service
+    role: preview
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5003
+      targetPort: 5003
+  selector:
+    app: order-service

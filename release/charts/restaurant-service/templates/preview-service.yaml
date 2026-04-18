@@ -1,0 +1,18 @@
+# =============================================================
+# Preview Service for Restaurant Service (Blue-Green)
+# =============================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: restaurant-service-preview
+  namespace: {{ .Values.global.namespace | default "fastfood" }}
+  labels:
+    app: restaurant-service
+    role: preview
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5002
+      targetPort: 5002
+  selector:
+    app: restaurant-service

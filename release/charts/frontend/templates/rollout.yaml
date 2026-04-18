@@ -1,15 +1,19 @@
-apiVersion: apps/v1
-kind: Deployment
-metadata: 
-  name: frontend-deployment
+# =============================================================
+# Argo Rollout — Frontend (Blue-Green Strategy)
+# =============================================================
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: frontend
   namespace: {{ .Values.global.namespace | default "fastfood" }}
+  labels:
+    app: frontend
 spec:
   replicas: {{ .Values.replicaCount | default 1 }}
+  revisionHistoryLimit: 3
   selector:
     matchLabels:
-      app: frontend  
-  strategy:
-    type: RollingUpdate
+      app: frontend
   template:
     metadata:
       labels:
@@ -33,3 +37,11 @@ spec:
             limits:
               memory: {{ .Values.resources.limits.memory | quote }}
               cpu: {{ .Values.resources.limits.cpu | quote }}
+
+  strategy:
+    blueGreen:
+      activeService: frontend-service
+      previewService: frontend-preview
+      autoPromotionEnabled: false
+      scaleDownDelaySeconds: 30
+      scaleDownDelayRevisionLimit: 2

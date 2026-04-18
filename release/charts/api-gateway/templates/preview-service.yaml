@@ -1,0 +1,20 @@
+# =============================================================
+# Preview Service for API Gateway (Blue-Green)
+# Routes traffic to the GREEN (new/preview) version of the app
+# Used for testing before promoting to production
+# =============================================================
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-gateway-preview
+  namespace: {{ .Values.global.namespace | default "fastfood" }}
+  labels:
+    app: api-gateway
+    role: preview
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5000
+      targetPort: 5000
+  selector:
+    app: api-gateway

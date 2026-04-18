@@ -1,0 +1,11 @@
+# =============================================================
+# Namespace for the FastFoodApp application
+# ArgoCD will deploy all resources into this namespace
+# =============================================================
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: fastfood
+  labels:
+    app.kubernetes.io/part-of: fastfoodapp
+    managed-by: argocd

@@ -1,23 +1,29 @@
-apiVersion: apps/v1
-kind: Deployment
+# =============================================================
+# Argo Rollout — User Service (Blue-Green Strategy)
+# =============================================================
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
 metadata:
-  name: restaurant-service-deployment
+  name: user-service
   namespace: {{ .Values.global.namespace | default "fastfood" }}
+  labels:
+    app: user-service
 spec:
   replicas: {{ .Values.replicaCount | default 1 }}
+  revisionHistoryLimit: 3
   selector:
     matchLabels:
-      app: restaurant-service
+      app: user-service
   template:
     metadata:
       labels:
-        app: restaurant-service
+        app: user-service
     spec:
       containers:
-        - name: restaurant-service
+        - name: user-service
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           ports:
-            - containerPort: 5002
+            - containerPort: 5001
           envFrom:
             - configMapRef:
                 name: fastfoodapp-config
@@ -30,3 +36,11 @@ spec:
             limits:
               memory: {{ .Values.resources.limits.memory | quote }}
               cpu: {{ .Values.resources.limits.cpu | quote }}
+
+  strategy:
+    blueGreen:
+      activeService: user-service-service
+      previewService: user-service-preview
+      autoPromotionEnabled: false
+      scaleDownDelaySeconds: 30
+      scaleDownDelayRevisionLimit: 2

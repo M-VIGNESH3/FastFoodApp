@@ -1,0 +1,68 @@
+# =============================================================
+# Argo Rollout — API Gateway (Blue-Green Strategy)
+#
+# This replaces the standard Deployment resource.
+# Argo Rollouts controller manages the blue-green cutover:
+#   - BLUE  = current active version (receives live traffic)
+#   - GREEN = new preview version (for testing before promotion)
+#
+# Promote:   kubectl argo rollouts promote api-gateway -n fastfood
+# Abort:     kubectl argo rollouts abort api-gateway -n fastfood
+# Dashboard: kubectl argo rollouts get rollout api-gateway -n fastfood --watch
+# =============================================================
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: api-gateway
+  namespace: {{ .Values.global.namespace | default "fastfood" }}
+  labels:
+    app: api-gateway
+spec:
+  replicas: {{ .Values.replicaCount | default 1 }}
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app: api-gateway
+  template:
+    metadata:
+      labels:
+        app: api-gateway
+    spec:
+      containers:
+        - name: api-gateway
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          ports:
+            - containerPort: 5000
+          envFrom:
+            - configMapRef:
+                name: fastfoodapp-config
+            - secretRef:
+                name: fastfoodapp-secret
+          resources:
+            requests:
+              memory: {{ .Values.resources.requests.memory | quote }}
+              cpu: {{ .Values.resources.requests.cpu | quote }}
+            limits:
+              memory: {{ .Values.resources.limits.memory | quote }}
+              cpu: {{ .Values.resources.limits.cpu | quote }}
+
+  # -----------------------------------------------------------
+  # BLUE-GREEN STRATEGY
+  # -----------------------------------------------------------
+  strategy:
+    blueGreen:
+      # The active service routes production traffic to the BLUE version
+      activeService: api-gateway
+
+      # The preview service routes test traffic to the GREEN version
+      previewService: api-gateway-preview
+
+      # Do NOT auto-promote — require manual approval
+      autoPromotionEnabled: false
+
+      # Keep the old (blue) ReplicaSet scaled up for 30s after promotion
+      # This allows graceful connection draining
+      scaleDownDelaySeconds: 30
+
+      # Revision history limit for rollback capability
+      scaleDownDelayRevisionLimit: 2
