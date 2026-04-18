@@ -54,7 +54,7 @@ api-gateway:
 user-service:
   replicaCount: 1
   image:
-    repository: vignesh8386/fastfoodapp-user-services
+    repository: nginx
     tag: latest
   resources:
     requests:
