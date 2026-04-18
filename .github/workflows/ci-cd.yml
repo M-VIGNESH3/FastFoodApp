@@ -73,7 +73,7 @@ jobs:
       - name: "📦 Install Dependencies"
         run: |
           cd ${{ matrix.service }}
-          npm ci --prefer-offline --no-audit
+          npm install --no-audit
         continue-on-error: false
 
       - name: "🔍 Run Linter (StandardJS)"
