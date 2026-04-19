@@ -26,7 +26,7 @@ blueGreen:
 # ----------------- Sub-Charts configuration -----------------
 
 frontend:
-  replicaCount: 10
+  replicaCount: 1
   image:
     repository: vignesh8386/fastfoodapp-frontend
     tag: latest
