@@ -78,7 +78,7 @@ restaurant-service:
       cpu: "500m"
 
 order-service:
-  replicaCount: 1
+  replicaCount: 3
   image:
     repository: vignesh8386/fastfoodapp-order-services
     tag: latest
